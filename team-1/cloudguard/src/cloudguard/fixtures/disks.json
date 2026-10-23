@@ -1,0 +1,22 @@
+[
+  {
+    "id": "disk-001",
+    "name": "orphan-disk-01",
+    "resource_type": "disk",
+    "region": "eastus",
+    "tags": {},
+    "managed_by": null,
+    "size_gb": 128,
+    "disk_state": "Unattached"
+  },
+  {
+    "id": "disk-002",
+    "name": "active-disk-02",
+    "resource_type": "disk",
+    "region": "eastus",
+    "tags": {"environment": "prod"},
+    "managed_by": "vm-001",
+    "size_gb": 64,
+    "disk_state": "Attached"
+  }
+]

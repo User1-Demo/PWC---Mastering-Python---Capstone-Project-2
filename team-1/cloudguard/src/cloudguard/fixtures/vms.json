@@ -1,0 +1,32 @@
+[
+  {
+    "id": "vm-001",
+    "name": "web-vm-01",
+    "resource_type": "vm",
+    "region": "eastus",
+    "tags": {"environment": "prod", "owner": "team-a"},
+    "power_state": "running",
+    "cpu_avg_percent_14d": 42.0,
+    "last_started": "2024-01-10T00:00:00Z"
+  },
+  {
+    "id": "vm-002",
+    "name": "batch-vm-02",
+    "resource_type": "vm",
+    "region": "eastus",
+    "tags": {},
+    "power_state": "running",
+    "cpu_avg_percent_14d": 0.8,
+    "last_started": "2023-11-01T00:00:00Z"
+  },
+  {
+    "id": "vm-003",
+    "name": "stopped-vm-03",
+    "resource_type": "vm",
+    "region": "westus",
+    "tags": {"environment": "dev"},
+    "power_state": "stopped",
+    "cpu_avg_percent_14d": 0.0,
+    "last_started": "2023-06-01T00:00:00Z"
+  }
+]
