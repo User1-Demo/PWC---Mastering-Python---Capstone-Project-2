@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudguard-api
+  namespace: cloudguard
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: cloudguard-api
+
+  template:
+    metadata:
+      labels:
+        app: cloudguard-api
+
+    spec:
+      containers:
+        - name: cloudguard-api
+          image: cloudguard:latest
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - uvicorn
+            - cloudguard.main:app
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8000"
+
+          ports:
+            - containerPort: 8000
+
+          envFrom:
+            - configMapRef:
+                name: cloudguard-config
+
+            - secretRef:
+                name: cloudguard-secrets
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

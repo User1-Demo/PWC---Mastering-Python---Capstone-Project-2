@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cloudguard-scheduled-scan
+  namespace: cloudguard
+
+spec:
+  schedule: "0 */6 * * *"
+
+  concurrencyPolicy: Forbid
+
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+
+      template:
+        metadata:
+          labels:
+            app: cloudguard-scheduled-scan
+
+        spec:
+          restartPolicy: Never
+
+          containers:
+            - name: scan
+              image: cloudguard:latest
+              imagePullPolicy: IfNotPresent
+
+              command:
+                - cloudguard
+                - scan
+                - --subscription-id
+                - "1"
+
+              envFrom:
+                - configMapRef:
+                    name: cloudguard-config
+
+                - secretRef:
+                    name: cloudguard-secrets

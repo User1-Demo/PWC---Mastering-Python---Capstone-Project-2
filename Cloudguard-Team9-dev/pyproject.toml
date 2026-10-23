@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudguard"
+version = "0.1.0"
+description = "Cloud infrastructure compliance and remediation platform"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "pydantic-settings",
+    "sqlalchemy>=2",
+    "psycopg[binary]",
+    "alembic",
+    "typer",
+    "httpx",
+    "python-jose[cryptography]",
+    "bcrypt",
+    "azure-identity",
+    "azure-mgmt-resource",
+    "azure-mgmt-network",
+    "azure-mgmt-compute",
+    "azure-keyvault-secrets"
+]
+
+[project.scripts]
+cloudguard = "cloudguard.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "ruff",
+    "mypy"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/cloudguard"]
+
+[tool.coverage.report]
+fail_under = 80
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+ignore = [
+    "B008",   # FastAPI Depends() pattern
+    "DTZ003", # POC currently uses naive UTC timestamps
+]

@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cloudguard-postgres
+
+    environment:
+      POSTGRES_DB: cloudguard
+      POSTGRES_USER: cloudguard
+      POSTGRES_PASSWORD: cloudguard
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - cloudguard_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudguard -d cloudguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      APP_NAME: CloudGuard
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://cloudguard:cloudguard@postgres:5432/cloudguard
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    command: ["alembic", "upgrade", "head"]
+  cloudguard-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: cloudguard-api
+
+    environment:
+      APP_NAME: CloudGuard
+      APP_ENV: development
+
+      DATABASE_URL: postgresql+psycopg://cloudguard:cloudguard@postgres:5432/cloudguard
+
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  cloudguard_postgres_data:
