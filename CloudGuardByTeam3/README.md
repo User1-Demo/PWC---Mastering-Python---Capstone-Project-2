@@ -45,5 +45,3 @@ cp .env.example .env
 docker compose up --build
 ```
 
-## Phase 2 preparation
-The Azure variables are already listed in `.env.example`, but Azure inventory calls are intentionally not implemented in Phase 1. Install Phase 2 dependencies with `pip install -e ".[azure,dev]"`. Prefer `DefaultAzureCredential`; use Azure CLI login for local development or workload/managed identity in Azure. Never commit `.env` or client secrets.
