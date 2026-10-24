@@ -1,0 +1,44 @@
+[
+  {
+    "id": "nsg-001",
+    "name": "web-nsg",
+    "resource_type": "nsg",
+    "region": "eastus",
+    "tags": {"environment": "prod"},
+    "rules": [
+      {
+        "name": "allow-rdp",
+        "direction": "Inbound",
+        "access": "Allow",
+        "protocol": "Tcp",
+        "destination_port_range": "3389",
+        "source_address_prefix": "*"
+      },
+      {
+        "name": "allow-https",
+        "direction": "Inbound",
+        "access": "Allow",
+        "protocol": "Tcp",
+        "destination_port_range": "443",
+        "source_address_prefix": "*"
+      }
+    ]
+  },
+  {
+    "id": "nsg-002",
+    "name": "db-nsg",
+    "resource_type": "nsg",
+    "region": "eastus",
+    "tags": {},
+    "rules": [
+      {
+        "name": "allow-ssh-any",
+        "direction": "Inbound",
+        "access": "Allow",
+        "protocol": "Tcp",
+        "destination_port_range": "22",
+        "source_address_prefix": "*"
+      }
+    ]
+  }
+]

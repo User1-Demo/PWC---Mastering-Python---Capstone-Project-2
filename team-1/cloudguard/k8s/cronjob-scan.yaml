@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cloudguard-nightly-scan
+  namespace: cloudguard
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: trigger-scheduled-scans
+              image: cloudguard/scan-worker:latest
+              command: ["python", "-m", "cloudguard.scripts.trigger_all_scheduled_scans"]
+              envFrom:
+                - configMapRef: {name: cloudguard-config}
+                - secretRef: {name: cloudguard-secrets}

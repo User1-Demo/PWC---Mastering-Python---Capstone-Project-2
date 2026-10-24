@@ -1,0 +1,29 @@
+replicaCount: 2
+
+image:
+  api: cloudguard/api:latest
+  scanWorker: cloudguard/scan-worker:latest
+  remediationWorker: cloudguard/remediation-worker:latest
+
+namespace: cloudguard
+
+config:
+  azureUseFixtures: "true"
+  k8sInCluster: "true"
+
+secrets:
+  databaseUrl: "postgresql://cloudguard:cloudguard@postgres:5432/cloudguard"
+  jwtSecret: "REPLACE_WITH_SECURE_RANDOM"
+  azureTenantId: ""
+  azureClientId: ""
+  azureClientSecret: ""
+
+postgres:
+  storage: 5Gi
+
+resources:
+  api:
+    requests: {cpu: "100m", memory: "128Mi"}
+    limits: {cpu: "500m", memory: "512Mi"}
+
+scanSchedule: "0 2 * * *"
