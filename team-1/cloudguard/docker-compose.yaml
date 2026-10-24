@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: cloudguard
+      POSTGRES_USER: cloudguard
+      POSTGRES_PASSWORD: cloudguard
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  api:
+    build: .
+    environment:
+      CLOUDGUARD_DATABASE_URL: postgresql+psycopg2://cloudguard:cloudguard@postgres:5432/cloudguard
+      CLOUDGUARD_JWT_SECRET: dev-secret-change-me
+      CLOUDGUARD_AZURE_USE_FIXTURES: "true"
+    ports: ["8000:8000"]
+    depends_on: [postgres]
+
+volumes:
+  pgdata:

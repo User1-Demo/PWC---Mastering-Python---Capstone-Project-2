@@ -1,0 +1,168 @@
+name: CloudGuard CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cloudguard-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-build-push:
+    name: Test, Build and Push to ACR
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+
+        env:
+          POSTGRES_USER: cloudguard_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: cloudguard
+
+        ports:
+          - "5432:5432"
+
+        options: >-
+          --health-cmd "pg_isready -U cloudguard_user -d cloudguard"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+          --health-start-period 5s
+
+    env:
+      DATABASE_URL: postgresql+psycopg://cloudguard_user:test_password@localhost:5432/cloudguard
+      JWT_SECRET: ci-only-secret-not-for-production
+      BOOTSTRAP_ADMIN_PASSWORD: ci-only-strong-password-123!
+      AZURE_MODE: mock
+      IMAGE_REPOSITORY: cloudguard
+
+    steps:
+      # ------------------------------------------------------------
+      # 1. Checkout the selected branch
+      # ------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------
+      # 2. Set up Python 3.12
+      # ------------------------------------------------------------
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # ------------------------------------------------------------
+      # 3. Install application and CI dependencies
+      # ------------------------------------------------------------
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      # ------------------------------------------------------------
+      # 4. Check undefined names, imports and syntax problems
+      # ------------------------------------------------------------
+      - name: Run Ruff lint checks
+        run: |
+          ruff check src tests --select F,E9
+
+      # ------------------------------------------------------------
+      # 5. Verify that the Python source can compile
+      # ------------------------------------------------------------
+      - name: Compile Python source
+        run: |
+          python -m compileall -q src
+
+      # ------------------------------------------------------------
+      # 6. Run static type checks
+      # ------------------------------------------------------------
+      - name: Run mypy type checks
+        run: |
+          mypy src/cloudguard \
+            --ignore-missing-imports \
+            --follow-imports=skip
+
+      # ------------------------------------------------------------
+      # 7. Apply Alembic migrations to temporary PostgreSQL
+      # ------------------------------------------------------------
+      - name: Run Alembic database migrations
+        run: |
+          alembic upgrade head
+
+      # ------------------------------------------------------------
+      # 8. Confirm that the database reached Alembic head
+      # ------------------------------------------------------------
+      - name: Verify Alembic migration
+        run: |
+          alembic current --check-heads
+
+      # ------------------------------------------------------------
+      # 9. Run tests and enforce minimum 80% coverage
+      # ------------------------------------------------------------
+      - name: Run tests with coverage
+        run: |
+          pytest \
+            --cov=cloudguard.rules \
+            --cov=cloudguard.services.remediation_service \
+            --cov-report=term-missing \
+            --cov-fail-under=80
+
+      # ------------------------------------------------------------
+      # 10. Configure Docker Buildx/BuildKit
+      # ------------------------------------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ------------------------------------------------------------
+      # 11. Authenticate to Azure using GitHub OIDC
+      # ------------------------------------------------------------
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # ------------------------------------------------------------
+      # 12. Authenticate Docker to Azure Container Registry
+      # ------------------------------------------------------------
+      - name: Login to Azure Container Registry
+        env:
+          ACR_NAME: ${{ secrets.ACR_NAME }}
+        run: |
+          az acr login --name "$ACR_NAME"
+
+      # ------------------------------------------------------------
+      # 13. Build and push the Docker image to ACR
+      #
+      # Result:
+      # cloudguardacr2026.azurecr.io/cloudguard:<commit-sha>
+      # ------------------------------------------------------------
+      - name: Build and push CloudGuard image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/cloudguard:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ------------------------------------------------------------
+      # 14. Display the published image address
+      # ------------------------------------------------------------
+      - name: Display published image
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          echo "CloudGuard image successfully pushed."
+          echo "Image: $ACR_LOGIN_SERVER/cloudguard:$GITHUB_SHA"

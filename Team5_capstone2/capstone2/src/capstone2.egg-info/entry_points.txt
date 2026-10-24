@@ -1,0 +1,2 @@
+[console_scripts]
+capstone2 = capstone2.cli:app

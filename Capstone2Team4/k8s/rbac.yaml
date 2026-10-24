@@ -1,0 +1,46 @@
+﻿apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudguard-api
+  namespace: cloudguard-staging
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudguard-scan-worker
+  namespace: cloudguard-staging
+  labels:
+    azure.workload.identity/use: "true"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudguard-remediation-worker
+  namespace: cloudguard-staging
+  labels:
+    azure.workload.identity/use: "true"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloudguard-job-dispatcher
+  namespace: cloudguard-staging
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloudguard-job-dispatcher
+  namespace: cloudguard-staging
+subjects:
+  - kind: ServiceAccount
+    name: cloudguard-api
+    namespace: cloudguard-staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloudguard-job-dispatcher
+

@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cloudguard-migrate
+  namespace: cloudguard
+
+spec:
+  backoffLimit: 3
+
+  template:
+    metadata:
+      labels:
+        app: cloudguard-migrate
+
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: migrate
+          image: cloudguard:latest
+
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - alembic
+            - upgrade
+            - head
+
+          envFrom:
+            - configMapRef:
+                name: cloudguard-config
+
+            - secretRef:
+                name: cloudguard-secrets
