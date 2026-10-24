@@ -1,0 +1,384 @@
+CLOUDGUARD - API SAMPLE INPUTS
+==============================
+
+Base API: http://127.0.0.1:8000/api/v1
+Swagger:  http://127.0.0.1:8000/docs
+
+1. HEALTH CHECK
+===============
+GET /api/v1/health
+
+Request body: None
+
+
+2. LOGIN
+========
+POST /api/v1/auth/login
+
+{
+  "username": "admin@cloudguard.local",
+  "password": "ChangeMe123!"
+}
+
+After login, use the returned access token for protected APIs:
+Authorization: Bearer <access_token>
+
+
+3. CREATE USER - CLOUD ENGINEER
+===============================
+POST /api/v1/users
+
+{
+  "username": "engineer@cloudguard.local",
+  "password": "Engineer123!",
+  "role": "cloud_engineer"
+}
+
+CREATE USER - SECURITY OFFICER
+{
+  "username": "security@cloudguard.local",
+  "password": "Security123!",
+  "role": "security_officer"
+}
+
+CREATE USER - AUTOMATION SERVICE ACCOUNT
+{
+  "username": "automation@cloudguard.local",
+  "password": "Automation123!",
+  "role": "service"
+}
+
+Note: Use this section only if /api/v1/users is exposed by the current API routes.
+
+
+4. REGISTER AZURE SUBSCRIPTION
+==============================
+POST /api/v1/subscriptions
+
+Recommended demo/mock input:
+{
+  "name": "CloudGuard Demo Subscription",
+  "azure_subscription_id": "11111111-2222-3333-4444-555555555555",
+  "environment": "dev",
+  "credential_ref": null
+}
+
+Staging example:
+{
+  "name": "CloudGuard Staging Subscription",
+  "azure_subscription_id": "22222222-3333-4444-5555-666666666666",
+  "environment": "staging",
+  "credential_ref": "keyvault://cloudguard-kv/staging-service-principal"
+}
+
+Production example:
+{
+  "name": "CloudGuard Production Subscription",
+  "azure_subscription_id": "33333333-4444-5555-6666-777777777777",
+  "environment": "prod",
+  "credential_ref": "keyvault://cloudguard-kv/prod-service-principal"
+}
+
+List subscriptions:
+GET /api/v1/subscriptions
+Request body: None
+
+
+5. CREATE REQUIRED-TAGS POLICY - LOW RISK AUTO-REMEDIATION
+===========================================================
+POST /api/v1/policies
+
+{
+  "name": "Require RBAC Tag",
+  "rule_type": "required_tags",
+  "severity": "low",
+  "config": {
+    "required_tags": [
+      "admin"
+    ]
+  },
+  "auto_remediate": true
+}
+
+Another 2nds example:
+{
+  "name": "Require Owner and Environment Tags",
+  "rule_type": "required_tags",
+  "severity": "low",
+  "config": {
+    "required_tags": [
+      "owner",
+      "environment"
+    ]
+  },
+  "auto_remediate": true
+}
+
+Medium-severity example:
+{
+  "name": "Require Governance Tags",
+  "rule_type": "required_tags",
+  "severity": "medium",
+  "config": {
+    "required_tags": [
+      "owner",
+      "environment",
+      "cost_center",
+      "application"
+    ]
+  },
+  "auto_remediate": true
+}
+
+High-severity example:
+{
+  "name": "Production Resource Ownership Policy",
+  "rule_type": "required_tags",
+  "severity": "high",
+  "config": {
+    "required_tags": [
+      "owner",
+      "business_unit"
+    ]
+  },
+  "auto_remediate": false
+}
+
+IMPORTANT:
+High/critical policies must use:
+"auto_remediate": false
+
+
+6. CREATE OPEN NSG PORT POLICY - HIGH RISK
+==========================================
+POST /api/v1/policies
+
+Recommended demo input:
+{
+  "name": "Block Public SSH",
+  "rule_type": "open_nsg_port",
+  "severity": "high",
+  "config": {
+    "ports": [
+      22
+    ]
+  },
+  "auto_remediate": false
+}
+
+Critical management-port example:
+{
+  "name": "Block Public Management Ports",
+  "rule_type": "open_nsg_port",
+  "severity": "critical",
+  "config": {
+    "ports": [
+      22,
+      3389
+    ]
+  },
+  "auto_remediate": false
+}
+
+Medium example:
+{
+  "name": "Review Public HTTP Access",
+  "rule_type": "open_nsg_port",
+  "severity": "medium",
+  "config": {
+    "ports": [
+      80
+    ]
+  },
+  "auto_remediate": false
+}
+
+List policies:
+GET /api/v1/policies
+Request body: None
+
+
+7. TRIGGER COMPLIANCE SCAN
+==========================
+POST /api/v1/scans
+
+{
+  "subscription_id": 1
+}
+
+Replace 1 with the subscription ID returned when the subscription was created.
+
+
+8. LIST SCANS
+=============
+GET /api/v1/scans
+
+Request body: None
+
+
+9. GET SCAN BY ID
+=================
+GET /api/v1/scans/1
+
+Request body: None
+Replace 1 with the actual scan ID.
+
+
+10. LIST FINDINGS
+=================
+GET /api/v1/findings
+
+Request body: None
+
+Possible finding statuses in the current model:
+- open
+- pending_approval
+- remediated
+- excepted
+- rejected
+
+
+11. REQUEST REMEDIATION
+=======================
+POST /api/v1/findings/2/remediate
+
+Request body: None
+Replace 2 with the actual finding ID.
+
+For high/critical findings, the expected workflow is pending approval.
+For eligible low/medium findings, remediation can complete directly.
+
+
+12. APPROVE HIGH-RISK REMEDIATION
+=================================
+POST /api/v1/findings/2/approve
+
+Request body: None
+Replace 2 with the actual high-risk finding ID.
+Use a Security Officer account/token if role authorization is enforced.
+
+
+13. CREATE APPROVED EXCEPTION
+=============================
+POST /api/v1/findings/2/exception
+
+{
+  "reason": "Temporary SSH access approved for the infrastructure migration window",
+  "expires_at": "2026-12-31T23:59:59Z"
+}
+
+Another example:
+{
+  "reason": "Legacy integration requires temporary public access while private connectivity is implemented",
+  "expires_at": "2027-01-31T18:30:00Z"
+}
+
+Replace 2 with the actual finding ID.
+
+
+14. LIST AUDIT LOGS
+===================
+GET /api/v1/audit-logs
+
+Request body: None
+
+
+============================================================
+RECOMMENDED CLOUDGUARD SWAGGER DEMO FLOW
+============================================================
+
+STEP 1 - LOGIN
+POST /api/v1/auth/login
+
+{
+  "username": "admin@cloudguard.local",
+  "password": "ChangeMe123!"
+}
+
+STEP 2 - AUTHORIZE
+Use the access_token returned from login for protected endpoints.
+
+STEP 3 - REGISTER SUBSCRIPTION
+POST /api/v1/subscriptions
+
+{
+  "name": "CloudGuard Demo Subscription",
+  "azure_subscription_id": "11111111-2222-3333-4444-555555555555",
+  "environment": "dev",
+  "credential_ref": null
+}
+
+STEP 4 - CREATE LOW-RISK AUTO-REMEDIATION POLICY
+POST /api/v1/policies
+
+{
+  "name": "Require Owner Tag",
+  "rule_type": "required_tags",
+  "severity": "low",
+  "config": {
+    "required_tags": [
+      "owner"
+    ]
+  },
+  "auto_remediate": true
+}
+
+STEP 5 - CREATE HIGH-RISK APPROVAL POLICY
+POST /api/v1/policies
+
+{
+  "name": "Block Public SSH",
+  "rule_type": "open_nsg_port",
+  "severity": "high",
+  "config": {
+    "ports": [
+      22
+    ]
+  },
+  "auto_remediate": false
+}
+
+STEP 6 - TRIGGER SCAN
+POST /api/v1/scans
+
+{
+  "subscription_id": 1
+}
+
+STEP 7 - VIEW FINDINGS
+GET /api/v1/findings
+
+STEP 8 - REQUEST HIGH-RISK REMEDIATION
+POST /api/v1/findings/<finding_id>/remediate
+Request body: None
+
+STEP 9 - APPROVE HIGH-RISK REMEDIATION
+POST /api/v1/findings/<finding_id>/approve
+Request body: None
+
+STEP 10 - VIEW AUDIT TRAIL
+GET /api/v1/audit-logs
+
+============================================================
+SUPPORTED POLICY VALUES
+============================================================
+
+rule_type:
+- required_tags
+- open_nsg_port
+
+severity:
+- low
+- medium
+- high
+- critical
+
+environment:
+- dev
+- staging
+- prod
+
+recommended demo policies:
+1. Require Owner Tag -> low -> auto_remediate=true
+2. Block Public SSH -> high -> auto_remediate=false
+
