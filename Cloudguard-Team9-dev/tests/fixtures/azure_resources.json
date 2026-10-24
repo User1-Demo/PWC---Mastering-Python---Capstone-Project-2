@@ -1,0 +1,57 @@
+[
+  {
+    "id": "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/cloudguard-dev-rg/providers/Microsoft.Compute/virtualMachines/web-server-01",
+    "name": "web-server-01",
+    "type": "Microsoft.Compute/virtualMachines",
+    "location": "centralindia",
+    "tags": {
+      "Environment": "dev",
+      "Owner": "cloud-team"
+    }
+  },
+  {
+    "id": "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/cloudguard-dev-rg/providers/Microsoft.Compute/virtualMachines/api-server-01",
+    "name": "api-server-01",
+    "type": "Microsoft.Compute/virtualMachines",
+    "location": "centralindia",
+    "tags": {
+      "Owner": "application-team"
+    }
+  },
+  {
+    "id": "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/cloudguard-dev-rg/providers/Microsoft.Storage/storageAccounts/cloudguarddevstorage",
+    "name": "cloudguarddevstorage",
+    "type": "Microsoft.Storage/storageAccounts",
+    "location": "centralindia",
+    "tags": {}
+  },
+{
+  "id": "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/cloudguard-dev-rg/providers/Microsoft.Network/networkSecurityGroups/web-nsg",
+  "name": "web-nsg",
+  "type": "Microsoft.Network/networkSecurityGroups",
+  "location": "centralindia",
+  "tags": {
+    "Environment": "dev"
+  },
+  "security_rules": [
+    {
+      "name": "Allow-HTTPS",
+      "direction": "Inbound",
+      "access": "Allow",
+      "protocol": "Tcp",
+      "source_address_prefix": "Internet",
+      "destination_port_range": "443",
+      "priority": 100
+    },
+    {
+      "name": "Allow-SSH-From-Internet",
+      "direction": "Inbound",
+      "access": "Allow",
+      "protocol": "Tcp",
+      "source_address_prefix": "*",
+      "destination_port_range": "22",
+      "priority": 110
+    }
+  ]
+}
+]
