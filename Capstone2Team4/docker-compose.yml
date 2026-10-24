@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: cloudguard
+      POSTGRES_USER: cloudguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-only-change-me}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudguard -d cloudguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - cloudguard-db:/var/lib/postgresql/data
+
+  api:
+    build: .
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://cloudguard:${POSTGRES_PASSWORD:-local-only-change-me}@db:5432/cloudguard
+      JWT_SECRET: ${JWT_SECRET:-local-only-change-me-use-a-random-secret}
+      AZURE_PROVIDER: ${AZURE_PROVIDER:-mock}
+      EXECUTION_MODE: inline
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  cloudguard-db:
+
